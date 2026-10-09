@@ -1,0 +1,141 @@
+services:
+
+  eureka-server:
+    build:
+      context: ./eureka-server
+    container_name: eureka-server
+    restart: unless-stopped
+    ports:
+      - "8761:8761"
+    networks:
+      - backend-network
+    healthcheck:
+      test: [ "CMD", "curl", "-fsS", "http://localhost:8761/actuator/health" ]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 20s
+
+
+  mysql-db:
+    image: mysql:8.0
+    container_name: mysql-db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ncbaTest
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+    ports:
+      - "${DB_PORT:-3306}:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    networks:
+      - backend-network
+    command: --default-authentication-plugin=mysql_native_password
+    healthcheck:
+      test: [ "CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u root -p$$MYSQL_ROOT_PASSWORD --silent" ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  cloudbeaver:
+    image: dbeaver/cloudbeaver:latest
+    container_name: cloudbeaver
+    restart: unless-stopped
+    ports:
+      - "5050:8978"
+    networks:
+      - backend-network
+    volumes:
+      - cloudbeaver-data:/opt/cloudbeaver/workspace
+    environment:
+      CB_SERVER_NAME: ${CLOUDBEAVER_SERVER_NAME}
+      CB_ADMIN_NAME: ${CLOUDBEAVER_ADMIN}
+      CB_ADMIN_PASSWORD: ${CLOUDBEAVER_PASSWORD}
+      CB_ANONYMOUS_ACCESS: ${CLOUDBEAVER_ANONYMOUS_ACCESS}
+      CB_HOME: ${CLOUDBEAVER_HOME}
+    depends_on:
+      mysql-db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "timeout 2 bash -c '</dev/tcp/localhost/8978' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - backend-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+
+  api-gateway:
+    build:
+      context: ./api-gateway
+    container_name: api-gateway
+    restart: unless-stopped
+    ports:
+      - "8086:8086"
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      EUREKA_SERVER: ${EUREKA_SERVER}
+      EUREKA_ENABLED: "true"
+      JWT_SECRET: ${JWT_SECRET}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      crud-service:
+        condition: service_started
+    networks:
+      - backend-network
+
+  crud-service:
+    build:
+      context: ./crud-service
+      dockerfile: Dockerfile
+    container_name: crud-service
+    restart: unless-stopped
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+
+      EUREKA_URI: http://eureka-server:8761/eureka/
+      EUREKA_SERVER: ${EUREKA_SERVER}
+      EUREKA_ENABLED: "true"
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+      mysql-db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - backend-network
+
+
+networks:
+  backend-network:
+    driver: bridge
+
+
+volumes:
+  mysql-data:
+  redis-data:
+  cloudbeaver-data:

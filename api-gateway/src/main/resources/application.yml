@@ -1,0 +1,46 @@
+server:
+  port: 8086
+
+spring:
+  application:
+    name: api-gateway
+  data:
+    redis:
+      host: ${REDIS_HOST:redis}
+      port: ${REDIS_PORT:6379}
+      database: 0
+      password: ${REDIS_PASSWORD:}
+
+  cloud:
+    gateway:
+      httpclient:                       # top-level under gateway
+        connect-timeout: 3000
+        response-timeout: 120s
+      routes:
+        - id: crud-service
+          uri: lb://crud-service
+          predicates:
+            - Path=/api/v1/**
+          filters:
+            - StripPrefix=1
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,gateway
+  endpoint:
+    gateway:
+      access: unrestricted
+
+springdoc:
+  swagger-ui:
+    urls:
+      - name: Crud Service
+        url: /crud-service/v3/api-docs
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_SERVER:http://eureka-server:8761/eureka/}
+    register-with-eureka: true
+    fetch-registry: true

@@ -1,0 +1,101 @@
+
+# Build output (all modules)
+target/
+**/target/
+ uploads/
+/logs
+
+
+# Maven Wrapper
+.mvn/wrapper/maven-wrapper.jar
+
+ quote-service
+# IntelliJ IDEA
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# VS Code
+.vscode/
+
+# Eclipse / STS
+.project
+.classpath
+.settings/
+.factorypath
+
+# NetBeans
+nbproject/private/
+nbbuild/
+dist/
+nbdist/
+
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+.env
+.env.*
+!.env.example
+!.env.template
+
+**/.env
+**/.env.*
+!**/.env.example
+!**/.env.template
+
+# AWS ECS Task Definitions
+taskdef-*.json
+**/taskdef-*.json
+
+*.log
+logs/
+**/logs/
+
+
+*.class
+*.jar
+*.war
+*.ear
+hs_err_pid*
+replay_pid*
+
+
+docker-compose.override.yml
+docker-compose.dev.yml
+**/docker-compose-dev.yml
+
+
+*.tmp
+*.temp
+*.swp
+*.swo
+*.lock
+*.bin
+
+
+.git.backup-*/
+
+!pom.xml
+!**/pom.xml
+
+!mvnw
+!mvnw.cmd
+!.mvn/wrapper/maven-wrapper.properties
+
+!Dockerfile
+!**/Dockerfile
+
+!*.properties
+!*.yml
+!*.yaml
+!*.sql
+
+!src/
+!**/src/
+coverage/
+reports/
+
+Readme2.md
+.log

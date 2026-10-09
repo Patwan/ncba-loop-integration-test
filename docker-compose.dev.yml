@@ -1,0 +1,177 @@
+# FOR DEV MODE (HOT RELOAD) ON CODE CHANGE
+services:
+
+  eureka-server:
+    build:
+      context: ./eureka-server
+      dockerfile: Dockerfile.dev
+    container_name: eureka-server
+    restart: unless-stopped
+    volumes:
+      - ./eureka-server/src:/app/src
+      - ./eureka-server/pom.xml:/app/pom.xml
+      - maven-cache:/root/.m2
+    ports:
+      - "8761:8761"
+    networks:
+      - backend-network
+    develop:
+      watch:
+        - action: rebuild
+          path: ./eureka-server/src
+        - action: rebuild
+          path: ./eureka-server/pom.xml
+    healthcheck:
+      test: [ "CMD", "curl", "-fsS", "http://localhost:8761/actuator/health" ]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 20s
+
+
+  mysql-db:
+    image: mysql:8.0
+    container_name: mysql-db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ncbaTest
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+    ports:
+      - "${DB_PORT:-3306}:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    networks:
+      - backend-network
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u root -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+
+  cloudbeaver:
+    image: dbeaver/cloudbeaver:latest
+    container_name: cloudbeaver
+    restart: unless-stopped
+    ports:
+      - "5050:8978"
+    networks:
+      - backend-network
+    volumes:
+      - cloudbeaver-data:/opt/cloudbeaver/workspace
+    environment:
+      CB_SERVER_NAME: ${CLOUDBEAVER_SERVER_NAME}
+      CB_ADMIN_NAME: ${CLOUDBEAVER_ADMIN}
+      CB_ADMIN_PASSWORD: ${CLOUDBEAVER_PASSWORD}
+      CB_ANONYMOUS_ACCESS: ${CLOUDBEAVER_ANONYMOUS_ACCESS}
+      CB_HOME: ${CLOUDBEAVER_HOME}
+    depends_on:
+      mysql-db:
+        condition: service_healthy
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - backend-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+
+
+  api-gateway:
+    build:
+      context: ./api-gateway
+      dockerfile: Dockerfile.dev
+    container_name: api-gateway
+    restart: unless-stopped
+    ports:
+      - "8086:8086"
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      EUREKA_SERVER: http://eureka-server:8761/eureka/
+      EUREKA_ENABLED: "true"
+      JWT_SECRET: ${JWT_SECRET}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    volumes:
+      - ./api-gateway/src:/app/src
+      - ./api-gateway/pom.xml:/app/pom.xml
+      - maven-cache:/root/.m2
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      crud-service:
+        condition: service_started
+    develop:
+      watch:
+        - action: rebuild
+          path: ./api-gateway/src
+        - action: rebuild
+          path: ./api-gateway/pom.xml
+    networks:
+      - backend-network
+
+
+  crud-service:
+    build:
+      context: ./crud-service
+      dockerfile: Dockerfile.dev
+    container_name: crud-service
+    restart: unless-stopped
+    ports:
+      - "8087:8087"
+    volumes:
+      - ./crud-service/src:/app/src
+      - ./crud-service/pom.xml:/app/pom.xml
+      - maven-cache:/root/.m2
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      EUREKA_SERVER: http://eureka-server:8761/eureka/
+      EUREKA_ENABLED: "true"
+    env_file:
+      - .env.dev
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+      mysql-db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    develop:
+      watch:
+        - action: rebuild
+          path: ./crud-service/src
+        - action: rebuild
+          path: ./crud-service/pom.xml
+    healthcheck:
+      test: ["CMD-SHELL", "timeout 2 bash -c '</dev/tcp/localhost/8087' || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 30
+      start_period: 45s
+    networks:
+      - backend-network
+
+networks:
+  backend-network:
+    driver: bridge
+
+volumes:
+  mysql-data:
+  redis-data:
+  cloudbeaver-data:
+  maven-cache:
