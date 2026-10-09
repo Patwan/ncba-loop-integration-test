@@ -25,16 +25,7 @@
 
 ## A. Overview
 
-### What is this?
-
-This project is a **small but complete microservices ecosystem** — a hands-on reference for building distributed systems the way modern teams do. Instead of one giant application, the work is split across **three independently deployable services** that talk to each other, share a cache, and stay resilient when things go wrong.
-
-Think of it like a well-organized kitchen:
-- One person takes orders at the door (**API Gateway**).
-- One person coordinates who's working where (**Eureka Server**).
-- One person does the actual cooking and talks to the suppliers (**CRUD Service**).
-
-### The three services at a glance
+### The three services
 
 | Service         |   | Port  | What it does                                                                                |
 |-----------------|-|-------|---------------------------------------------------------------------------------------------|
@@ -44,7 +35,7 @@ Think of it like a well-organized kitchen:
 
 ### Key characteristics
 
--  **Stateless** — any service can be scaled up or down freely; no user session is tied to one machine.
+-  **Stateless** — any service can be scaled up or down freely; no user session tied.
 -  **Redis-backed caching** — repeated requests are served in milliseconds without hitting the database.
 - ️ **Resilient** — if the external service fails, retries kick in with exponential backoff, then a circuit breaker prevents cascading failures.
 -  **Discoverable** — services find each other by name, not IP address.
@@ -207,8 +198,8 @@ Before you start, make sure you have:
 #### 1️⃣ Get the code
 
 ```bash
-git clone https://github.com/<your-org>/<your-repo>.git
-cd <your-repo>
+https://github.com/Patwan/ncba-loop-integration-test.git
+cd ncba-loop-integration-test
 ```
 
 #### 2️⃣ Create your environment file
