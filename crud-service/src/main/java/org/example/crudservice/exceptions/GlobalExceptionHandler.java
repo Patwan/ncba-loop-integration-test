@@ -1,34 +1,48 @@
 package org.example.crudservice.exceptions;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import java.net.URI;
 import java.time.Instant;
 import java.util.Map;
+import java.util.stream.Collectors;
 
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(CountryNotFoundException.class)
-    public ResponseEntity<Map<String, Object>> handleNotFound(CountryNotFoundException ex) {
-        return buildResponse(HttpStatus.NOT_FOUND, "COUNTRY_NOT_FOUND", ex.getMessage());
-    }
-
-    @ExceptionHandler(SoapException.class)
-    public ResponseEntity<Map<String, Object>> handleSoap(SoapException ex) {
-        return buildResponse(HttpStatus.BAD_GATEWAY, "SOAP_UPSTREAM_ERROR", ex.getMessage());
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ProblemDetail handleNotFound(ResourceNotFoundException ex) {
+        ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
+        pd.setTitle("Resource Not Found");
+        pd.setType(URI.create("urn:problem:not-found"));
+        return pd;
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<Map<String, Object>> handleValidation(MethodArgumentNotValidException ex) {
-        String msg = ex.getBindingResult().getFieldErrors().stream()
-                .map(e -> e.getField() + ": " + e.getDefaultMessage())
-                .reduce((a, b) -> a + "; " + b)
-                .orElse("Validation failed");
-        return buildResponse(HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", msg);
+    public ProblemDetail handleValidation(MethodArgumentNotValidException ex) {
+        String details = ex.getBindingResult().getFieldErrors().stream()
+                .map(fe -> fe.getField() + ": " + fe.getDefaultMessage())
+                .collect(Collectors.joining("; "));
+        ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, details);
+        pd.setTitle("Validation Failed");
+        pd.setType(URI.create("urn:problem:validation"));
+        return pd;
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ProblemDetail handleGeneric(Exception ex) {
+        log.error("Unhandled exception", ex);
+        ProblemDetail pd = ProblemDetail.forStatusAndDetail(
+                HttpStatus.INTERNAL_SERVER_ERROR, "Unexpected error occurred");
+        pd.setTitle("Internal Server Error");
+        return pd;
     }
 
     private ResponseEntity<Map<String, Object>> buildResponse(

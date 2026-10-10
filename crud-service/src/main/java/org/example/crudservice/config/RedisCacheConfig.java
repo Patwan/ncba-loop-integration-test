@@ -20,15 +20,30 @@ import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Redis-backed cache configuration.
+ *
+ * <p><b>Important:</b> the cache-name constants below are declared as
+ * {@code public static final String} literals so they can be referenced
+ * inside Spring cache annotations ({@code @Cacheable}, {@code @CacheEvict},
+ * ...). Java requires annotation attribute values to be compile-time
+ * constants — an array such as {@link #ALL_COUNTRY_CACHES} is <em>not</em>
+ * a constant and therefore cannot be used inside an annotation.</p>
+ */
 @Configuration
 @EnableCaching
 public class RedisCacheConfig {
 
-    /** Cache name constants — used in @Cacheable annotations */
+    /** Cache name constants — safe to use in @Cacheable / @CacheEvict. */
     public static final String COUNTRY_BY_ISO = "countryByIso";
     public static final String COUNTRY_BY_ID  = "countryById";
     public static final String ALL_COUNTRIES  = "allCountries";
 
+    /**
+     * Convenience array for programmatic access (e.g. {@code CacheManager#getCache}).
+     * <b>Do not</b> reference this inside a cache annotation — the compiler will
+     * reject it with "AttributeValue must be a constant".
+     */
     public static final String[] ALL_COUNTRY_CACHES = {
             COUNTRY_BY_ISO, COUNTRY_BY_ID, ALL_COUNTRIES
     };
@@ -36,13 +51,18 @@ public class RedisCacheConfig {
     @Bean
     public CacheManager cacheManager(RedisConnectionFactory connectionFactory) {
 
-        // Use JSON serialization instead of Java serialization
+        // Use JSON serialization instead of Java serialization.
+        // The polymorphic type validator is restricted to this project's
+        // package (plus JDK collections/time) to avoid the well-known
+        // Jackson deserialization gadget CVEs.
         ObjectMapper mapper = new ObjectMapper();
         mapper.registerModule(new JavaTimeModule());
         mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
         mapper.activateDefaultTyping(
                 BasicPolymorphicTypeValidator.builder()
-                        .allowIfSubType(Object.class)
+                        .allowIfSubType("org.example.crudservice.")
+                        .allowIfSubType("java.util.")
+                        .allowIfSubType("java.time.")
                         .build(),
                 ObjectMapper.DefaultTyping.NON_FINAL,
                 JsonTypeInfo.As.PROPERTY
