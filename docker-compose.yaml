@@ -6,9 +6,11 @@ services:
     container_name: eureka-server
     restart: unless-stopped
     ports:
-      - "8761:8761"
+      - "${EUREKA_SERVICE_PORT:-8761}:8761"
     networks:
       - backend-network
+    env_file:
+      - .env.dev
     healthcheck:
       test: [ "CMD", "curl", "-fsS", "http://localhost:8761/actuator/health" ]
       interval: 5s
@@ -56,6 +58,8 @@ services:
       CB_ADMIN_PASSWORD: ${CLOUDBEAVER_PASSWORD}
       CB_ANONYMOUS_ACCESS: ${CLOUDBEAVER_ANONYMOUS_ACCESS}
       CB_HOME: ${CLOUDBEAVER_HOME}
+    env_file:
+      - .env.dev
     depends_on:
       mysql-db:
         condition: service_healthy
@@ -89,14 +93,9 @@ services:
     container_name: api-gateway
     restart: unless-stopped
     ports:
-      - "8086:8086"
-    environment:
-      SPRING_PROFILES_ACTIVE: dev
-      EUREKA_SERVER: ${EUREKA_SERVER}
-      EUREKA_ENABLED: "true"
-      JWT_SECRET: ${JWT_SECRET}
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
+      - "${GATEWAY_SERVICE_PORT:-8086}:8086"
+    env_file:
+      - .env.dev
     depends_on:
       eureka-server:
         condition: service_healthy
@@ -113,12 +112,10 @@ services:
       dockerfile: Dockerfile
     container_name: crud-service
     restart: unless-stopped
-    environment:
-      SPRING_PROFILES_ACTIVE: dev
-
-      EUREKA_URI: http://eureka-server:8761/eureka/
-      EUREKA_SERVER: ${EUREKA_SERVER}
-      EUREKA_ENABLED: "true"
+    ports:
+      - "${CRUD_SERVICE_PORT:-8087}:8087"
+    env_file:
+      - .env.dev
     depends_on:
       eureka-server:
         condition: service_healthy

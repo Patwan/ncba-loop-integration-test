@@ -1,0 +1,207 @@
+{
+  "info": {
+    "_postman_id": "2f45bffc-197a-4fa2-8697-4a18e2967f52",
+    "name": "NCBA LOOP TEST",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "5896074",
+    "_collection_link": "https://go.postman.co/collection/5896074-2f45bffc-197a-4fa2-8697-4a18e2967f52?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "CRUD Endpoints",
+      "item": [
+        {
+          "name": "01_Fetch All Countries",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{API_GATEWAY_URL}}/api/v1/countries/fetch-all",
+              "host": [
+                "{{API_GATEWAY_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "countries",
+                "fetch-all"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "02_Fetch Country By ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{API_GATEWAY_URL}}/api/v1/countries/26",
+              "host": [
+                "{{API_GATEWAY_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "countries",
+                "26"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "03_Update Country Info",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"name\": \"Kenya\",\r\n  \"capitalCity\": \"Nairobi\",\r\n  \"phoneCode\": \"254\",\r\n  \"continentCode\": \"AF\",\r\n  \"currencyIsoCode\": \"KES\",\r\n  \"currencyName\": \"Kenyan Shillings\",\r\n  \"flagUrl\": \"\",\r\n  \"languages\": [\r\n    { \"isoCode\": \"swa\", \"name\": \"Swahili\" },\r\n    { \"isoCode\": \"eng\", \"name\": \"English\" }\r\n  ]\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_GATEWAY_URL}}/api/v1/countries/22",
+              "host": [
+                "{{API_GATEWAY_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "countries",
+                "22"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "04_Delete Country By Id",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_GATEWAY_URL}}/api/v1/countries/22",
+              "host": [
+                "{{API_GATEWAY_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "countries",
+                "22"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "02_Fetch ISO Code",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"countryName\" : \"Rwanda\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{API_GATEWAY_URL}}/api/v1/countries/fetch-iso-code",
+          "host": [
+            "{{API_GATEWAY_URL}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "countries",
+            "fetch-iso-code"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "03_Fetch  Country Info By ISO Code",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"isoCode\" : \"AZ\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{API_GATEWAY_URL}}/api/v1/countries/fetch-full-country-info",
+          "host": [
+            "{{API_GATEWAY_URL}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "countries",
+            "fetch-full-country-info"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "01_Convert To Sentence Case",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"name\" : \"Tanzania\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{API_GATEWAY_URL}}/api/v1/countries/sentence-case",
+          "host": [
+            "{{API_GATEWAY_URL}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "countries",
+            "sentence-case"
+          ]
+        }
+      },
+      "response": []
+    }
+  ],
+  "variable": [
+    {
+      "key": "API_GATEWAY_URL",
+      "value": ""
+    }
+  ]
+}

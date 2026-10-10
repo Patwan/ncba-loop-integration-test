@@ -37,7 +37,7 @@ public class CrudServiceImpl implements CrudService {
                     + "+ ':sort:' + #pageable.sort.toString()"
     )
     public PageResponse<CountryResponse> findAll(Pageable pageable) {
-        log.debug("Cache miss — querying DB for page {}", pageable);
+        // log.debug("Cache miss — querying DB for page {}", pageable);
         Page<CountryInfo> page = countryInfoRepository.findAll(pageable);
         return PageResponse.from(page, countryRestMapper::toResponse);
     }
@@ -47,7 +47,7 @@ public class CrudServiceImpl implements CrudService {
     @Transactional(readOnly = true)
     @Cacheable(cacheNames = RedisCacheConfig.COUNTRY_BY_ID, key = "#id")
     public CountryResponse findById(Long id) {
-        log.debug("Cache miss — querying DB for id {}", id);
+        // log.debug("Cache miss — querying DB for id {}", id);
         CountryInfo entity = countryInfoRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Country not found with id: " + id));
@@ -83,7 +83,7 @@ public class CrudServiceImpl implements CrudService {
         }
 
         CountryInfo saved = countryInfoRepository.save(entity);
-        log.info("Updated country id={} iso='{}'", saved.getId(), saved.getIsoCode());
+        // log.info("Updated country id={} iso='{}'", saved.getId(), saved.getIsoCode());
         return countryRestMapper.toResponse(saved);
     }
 
@@ -103,6 +103,6 @@ public class CrudServiceImpl implements CrudService {
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Country not found with id: " + id));
         countryInfoRepository.delete(entity);
-        log.info("Deleted country id={} iso='{}'", id, entity.getIsoCode());
+        // log.info("Deleted country id={} iso='{}'", id, entity.getIsoCode());
     }
 }

@@ -2,11 +2,14 @@ package org.example.crudservice.services;
 
 import com.developerhut.intothespring.ws.CountryInfoServiceSoapType;
 import com.developerhut.intothespring.ws.TCountryInfo;
+import org.springframework.cache.annotation.Cacheable;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
+import jakarta.xml.ws.WebServiceException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.crudservice.config.RedisCacheConfig;
+import org.example.crudservice.dtos.Response.CountryInfoResponse;
 import org.example.crudservice.dtos.Response.LookupResponse;
 import org.example.crudservice.entities.CountryInfo;
 import org.example.crudservice.exceptions.SoapException;
@@ -15,6 +18,10 @@ import org.example.crudservice.utility.CountryMapper;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import java.net.ConnectException;
+import java.net.SocketTimeoutException;
 
 @Slf4j
 @Service
@@ -24,6 +31,7 @@ public class IsoServiceImpl implements IsoService {
     private final CountryInfoServiceSoapType soapPort;
     private final CountryInfoRepository countryInfoRepository;
     private final CountryMapper countryMapper;
+    private static final ObjectMapper MAPPER = new ObjectMapper();
 
     @Override
     public String convertToSentenceCase(String input) {
@@ -44,54 +52,82 @@ public class IsoServiceImpl implements IsoService {
                 sb.append(c);
             }
         }
+
+        // log.info("SentenceCase output {}", sb.toString());
+
         return sb.toString();
     }
 
 
     @Override
+    @Cacheable(
+            cacheNames = RedisCacheConfig.COUNTRY_BY_ISO,
+            key = "#result != null ? #result : 'unknown:' + #countryName",
+            unless = "#result == null || #result.isBlank()"
+    )
     @CircuitBreaker(name = "countrySoap", fallbackMethod = "lookupFallback")
     @Retry(name = "countrySoap")
-    @Transactional
-    @CacheEvict(
-            cacheNames = {
-                    RedisCacheConfig.COUNTRY_BY_ISO,
-                    RedisCacheConfig.COUNTRY_BY_ID,
-                    RedisCacheConfig.ALL_COUNTRIES
-            },
-            allEntries = true
-    )
-    public LookupResponse fetchIsoCodeByCountryName(String countryName) {
+    public String fetchIsoCodeByCountryName(String countryName) {
 
-        if (countryName == null || countryName.isBlank()) {
-            throw new SoapException("Country name must not be null or blank");
+
+        String isoCode;
+        try {
+            isoCode = soapPort.countryISOCode(countryName);
         }
-        final String normalisedName = convertToSentenceCase(countryName);
-
-        String isoCode = soapPort.countryISOCode(normalisedName);
+        catch (WebServiceException ex) {
+            // log.warn("SOAP transport failure resolving ISO for '{}': {}", countryName, ex.getMessage());
+            // rethrow so @Retry sees it and retries
+            throw ex;
+        }
+        catch (Exception ex) {
+            // SoapException is in `ignore-exceptions`, so @Retry will NOT retry.
+            log.error("Unexpected SOAP fault resolving ISO for '{}': {}",
+                    countryName, ex.getMessage(), ex);
+            throw new SoapException(
+                    "SOAP fault while resolving ISO code for '" + countryName + "'", ex);
+        }
 
         if (isoCode == null || isoCode.isBlank()) {
-            throw new SoapException("No ISO code returned for country: " + normalisedName);
+            log.warn("SOAP returned empty ISO code for country '{}'", countryName);
+            throw new SoapException("Unknown country: '" + countryName + "'");
         }
-        log.debug("Resolved ISO code '{}' for country '{}'", isoCode, normalisedName);
+
+        // log.info("Resolved ISO code '{}' for country '{}'", isoCode, normalisedName);
+        return isoCode;
+    }
+
+    @Override
+    @Transactional
+    public CountryInfoResponse fetchFullCountryInfoByIsoCode(String isoCode) {
+
 
         TCountryInfo soapCountry = soapPort.fullCountryInfo(isoCode);
-
         if (soapCountry == null) {
             throw new SoapException("FullCountryInfo returned null for ISO code: " + isoCode);
         }
-        log.debug("Fetched full country info for ISO code '{}': name='{}', currencyIso='{}'",
-                isoCode, soapCountry.getSName(), soapCountry.getSCurrencyISOCode());
 
+        // log.debug("SOAP FullCountryInfo fetched for ISO '{}'", isoCode);
+        CountryInfoResponse response = countryMapper.toResponse(soapCountry);
 
-        CountryInfo entity = countryMapper.toEntity(soapCountry);
+        if (response.getCurrencyIsoCode() != null && !response.getCurrencyIsoCode().isBlank()) {
+            try {
+                String currencyName = soapPort.currencyName(response.getCurrencyIsoCode());
+                response.setCurrencyName(currencyName);
+                // log.debug("Resolved currency name '{}' for ISO '{}'", currencyName, response.getCurrencyIsoCode());
 
+                CountryInfo entity = countryMapper.toEntity(soapCountry);
+                enrichCurrencyName(entity);
 
-        enrichCurrencyName(entity);
+                entity = persistData(entity);
+                // log.info("Persisted country '{}' (ISO='{}') with id={}",  entity.getName(), entity.getIsoCode(), entity.getId());
+            }
+            catch (Exception ex) {
+                // log.warn("Could not resolve currency name for ISO '{}': {}", response.getCurrencyIsoCode(), ex.getMessage());
+            }
+        }
 
-        entity = persistData(entity);
-        log.info("Persisted country '{}' (ISO='{}') with id={}",
-                entity.getName(), entity.getIsoCode(), entity.getId());
-        return countryMapper.toLookupResponse(entity);
+        // log.info("FullCountryInfo resolved iso='{}' name='{}' languages={}", response.getIsoCode(), response.getName(), response.getLanguages() == null ? 0 : response.getLanguages().size());
+        return response;
     }
 
     private void enrichCurrencyName(CountryInfo entity) {
@@ -117,6 +153,12 @@ public class IsoServiceImpl implements IsoService {
     }
 
     private CountryInfo persistData(CountryInfo incoming) {
+
+        // Safety net for the languages
+        if (incoming.getLanguages() != null) {
+            incoming.getLanguages().forEach(lang -> lang.setCountry(incoming));
+        }
+
         return countryInfoRepository.findByIsoCode(incoming.getIsoCode())
                 .map(existing -> {
                     existing.setName(incoming.getName());

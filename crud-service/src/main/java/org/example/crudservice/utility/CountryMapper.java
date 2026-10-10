@@ -2,6 +2,7 @@ package org.example.crudservice.utility;
 
 import com.developerhut.intothespring.ws.TCountryInfo;
 import com.developerhut.intothespring.ws.TLanguage;
+import org.example.crudservice.dtos.Response.CountryInfoResponse;
 import org.example.crudservice.dtos.Response.LanguageDto;
 import org.example.crudservice.dtos.Response.LookupResponse;
 import org.example.crudservice.entities.CountryInfo;
@@ -65,6 +66,31 @@ public interface CountryMapper {
             result.add(lang);
         }
         return result;
+    }
+
+
+    @Mapping(target = "isoCode",         source = "SISOCode")
+    @Mapping(target = "name",            source = "SName")
+    @Mapping(target = "capitalCity",     source = "SCapitalCity")
+    @Mapping(target = "phoneCode",       source = "SPhoneCode")
+    @Mapping(target = "continentCode",   source = "SContinentCode")
+    @Mapping(target = "currencyIsoCode", source = "SCurrencyISOCode")
+    @Mapping(target = "currencyName",    ignore = true)    // enriched later
+    @Mapping(target = "flagUrl",         source = "SCountryFlag")
+    @Mapping(target = "languages",       source = "languages.TLanguage",
+            qualifiedByName = "mapLanguagesToDto")
+    CountryInfoResponse toResponse(TCountryInfo soapCountry);
+
+    @Named("mapLanguagesToDto")
+    default List<CountryInfoResponse.LanguageDto> mapLanguagesToDto(List<TLanguage> soapLanguages) {
+        if (soapLanguages == null) return List.of();
+        return soapLanguages.stream()
+                .filter(java.util.Objects::nonNull)
+                .map(t -> CountryInfoResponse.LanguageDto.builder()
+                        .isoCode(t.getSISOCode())
+                        .name(t.getSName())
+                        .build())
+                .toList();
     }
 
     default Language toEntity(TLanguage soapLanguage) {

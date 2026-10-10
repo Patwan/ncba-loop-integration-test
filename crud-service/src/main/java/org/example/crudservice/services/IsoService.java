@@ -1,10 +1,12 @@
 package org.example.crudservice.services;
 
-import org.example.crudservice.dtos.Response.LookupResponse;
+import org.example.crudservice.dtos.Response.CountryInfoResponse;
 
 public interface IsoService {
 
-    LookupResponse fetchIsoCodeByCountryName(String countryName);
+    String fetchIsoCodeByCountryName(String countryName);
 
     String convertToSentenceCase(String input);
+
+    CountryInfoResponse fetchFullCountryInfoByIsoCode(String input);
 }

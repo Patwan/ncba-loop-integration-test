@@ -1,5 +1,5 @@
 server:
-  port: 8087
+  port: ${CRUD_SERVICE_PORT:8087}
 
 spring:
   application:
@@ -46,16 +46,14 @@ spring:
 soap:
   client:
     country-info:
-      endpoint-url: ${COUNTRY_INFO_SOAP_URL:http://webservices.oorsprong.org/websamples.countryinfo/CountryInfoService.wso}
+      endpoint-url: ${WSDL_URL:http://webservices.oorsprong.org/websamples.countryinfo/CountryInfoService.wso}
       connect-timeout: 5000
       read-timeout: 10000
 
-# ─── Resilience4j ───
 resilience4j:
-  # Retry: try 3 times before giving up
   retry:
     instances:
-      soapCountryInfo:
+      countrySoap:
         max-attempts: 3
         wait-duration: 500ms
         enable-exponential-backoff: true
@@ -63,23 +61,24 @@ resilience4j:
         retry-exceptions:
           - jakarta.xml.ws.WebServiceException
           - java.net.SocketTimeoutException
-          - java.io.IOException
+          - java.net.ConnectException
         ignore-exceptions:
-          - org.example.crudservice.exceptions.CountryNotFoundException
+          - org.example.crudservice.exceptions.SoapException
+          - org.example.crudservice.exceptions.ResourceNotFoundException
 
-  # Circuit Breaker: stop calling if too many failures
   circuitbreaker:
     instances:
-      soapCountryInfo:
-        register-health-indicator: true
+      countrySoap:
         sliding-window-size: 10
         minimum-number-of-calls: 5
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 30s
         permitted-number-of-calls-in-half-open-state: 3
         automatic-transition-from-open-to-half-open-enabled: true
-        wait-duration-in-open-state: 30s
-        failure-rate-threshold: 50
-        slow-call-rate-threshold: 80
-        slow-call-duration-threshold: 3s
+        record-exceptions:
+          - jakarta.xml.ws.WebServiceException
+          - java.net.SocketTimeoutException
+          - java.net.ConnectException
 
   # Bulkhead: limit concurrent calls (optional)
   bulkhead:
@@ -92,7 +91,7 @@ resilience4j:
 logging:
   level:
     io.github.resilience4j: INFO
-    com.example.crud: DEBUG
+    org.example.crudservice: DEBUG
 
 springdoc:
   api-docs:

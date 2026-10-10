@@ -3,7 +3,9 @@ package org.example.crudservice.controllers;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.example.crudservice.components.RequestContext;
 import org.example.crudservice.dtos.Request.CountryUpdateRequest;
+import org.example.crudservice.dtos.Response.ApiResponse;
 import org.example.crudservice.dtos.Response.CountryResponse;
 import org.example.crudservice.dtos.Response.PageResponse;
 import org.example.crudservice.services.CrudService;
@@ -12,9 +14,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
-
-import java.net.URI;
 
 @Slf4j
 @RestController
@@ -23,14 +22,14 @@ import java.net.URI;
 public class CrudController {
 
     private final CrudService countryCrudService;
+    private final RequestContext requestContext;
 
-    @GetMapping
-    public ResponseEntity<PageResponse<CountryResponse>> getAll(
-            @RequestParam(defaultValue = "0")  int page,
-            @RequestParam(defaultValue = "20") int size,
+    @GetMapping("/fetch-all")
+    public ResponseEntity<ApiResponse<PageResponse<CountryResponse>>> getAll(
+            @RequestParam(defaultValue = "0")    int page,
+            @RequestParam(defaultValue = "20")   int size,
             @RequestParam(defaultValue = "name") String sortBy,
             @RequestParam(defaultValue = "asc")  String direction) {
-
 
         int safeSize = Math.min(size, 100);
         Sort sort = "desc".equalsIgnoreCase(direction)
@@ -38,30 +37,49 @@ public class CrudController {
                 : Sort.by(sortBy).ascending();
         Pageable pageable = PageRequest.of(page, safeSize, sort);
 
-        PageResponse<CountryResponse> body = countryCrudService.findAll(pageable);
+        PageResponse<CountryResponse> data = countryCrudService.findAll(pageable);
+
+        ApiResponse<PageResponse<CountryResponse>> body = ApiResponse.success(
+                data,
+                "Countries fetched successfully",
+                requestContext.getRequestTime()
+        );
+
         return ResponseEntity.ok(body);
     }
 
-
     @GetMapping("/{id}")
-    public ResponseEntity<CountryResponse> getById(@PathVariable Long id) {
-        return ResponseEntity.ok(countryCrudService.findById(id));
+    public ResponseEntity<ApiResponse<CountryResponse>> getById(@PathVariable Long id) {
+        CountryResponse data = countryCrudService.findById(id);
+        ApiResponse<CountryResponse> body = ApiResponse.success(
+                data,
+                "Country fetched successfully",
+                requestContext.getRequestTime()
+        );
+        return ResponseEntity.ok(body);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<CountryResponse> update(
+    public ResponseEntity<ApiResponse<CountryResponse>> update(
             @PathVariable Long id,
             @Valid @RequestBody CountryUpdateRequest request) {
 
-        CountryResponse updated = countryCrudService.update(id, request);
-        URI location = ServletUriComponentsBuilder.fromCurrentRequest()
-                .buildAndExpand(id).toUri();
-        return ResponseEntity.ok().location(location).body(updated);
+        CountryResponse data = countryCrudService.update(id, request);
+        ApiResponse<CountryResponse> body = ApiResponse.success(
+                data,
+                "Country updated successfully",
+                requestContext.getRequestTime()
+        );
+        return ResponseEntity.ok(body);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Long id) {
         countryCrudService.delete(id);
-        return ResponseEntity.noContent().build();
+        ApiResponse<Void> body = ApiResponse.successNoData(
+                "Country deleted successfully",
+                requestContext.getRequestTime()
+        );
+        return ResponseEntity.ok(body);
     }
 }

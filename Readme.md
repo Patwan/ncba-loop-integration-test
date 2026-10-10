@@ -187,22 +187,25 @@
 
 Before you start, make sure you have:
 
+-  **Postman** for testing the collection at the root of this project
 -  **Docker Desktop** v4.30 or newer (WSL2 backend on Windows).
 -  **Docker Compose v2** — use `docker compose`, not the old `docker-compose`.
 -  **JDK 21** — *only* required if you want to run services outside Docker.
 -  **8GB RAM** available to Docker (Settings → Resources → Memory).
 -  **Internet access** on first run (Maven downloads dependencies).
 
-### 🚀 Quick start (5 minutes)
+### Quick start (5 minutes)
 
-#### 1️⃣ Get the code
+#### 1️.Get the code  and postman collection
+
+- Import the collection at the root of this project to your postman
 
 ```bash
 https://github.com/Patwan/ncba-loop-integration-test.git
 cd ncba-loop-integration-test
 ```
 
-#### 2️⃣ Create your environment file
+#### 2️.Create your environment file
 
 Copy the  `.env.example` file to ``.env`` and populate the values
 

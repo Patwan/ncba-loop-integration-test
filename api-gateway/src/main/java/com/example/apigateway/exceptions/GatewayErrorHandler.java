@@ -51,7 +51,7 @@ public class GatewayErrorHandler extends AbstractErrorWebExceptionHandler {
 
         if (error instanceof ConnectException) {
             status = HttpStatus.SERVICE_UNAVAILABLE;
-            message = "Service temporarily unavailable. Please try again.";
+            message = "Service temporarily unavailable. Please try again shortly.";
 
         } else if (error instanceof java.util.concurrent.TimeoutException) {
             status = HttpStatus.GATEWAY_TIMEOUT;
