@@ -6,10 +6,12 @@ RUN apt-get update && \
 
 WORKDIR /app
 
+# Copy pom.xml and resolve dependencies first (improves Docker caching)
 COPY pom.xml ./
-COPY src ./src
+RUN mvn dependency:go-offline -B || true
 
-RUN mvn -B -DskipTests package
+# Copy source code
+COPY src ./src
 
 EXPOSE 8087
 

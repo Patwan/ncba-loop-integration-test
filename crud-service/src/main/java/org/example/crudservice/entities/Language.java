@@ -28,7 +28,7 @@ public class Language {
     @Column(name = "iso_code", length = 3)
     private String isoCode;
 
-    @Column(name = "language_name", nullable = false)
+    @Column(name = "name", nullable = false)
     private String name;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
