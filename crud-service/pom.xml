@@ -33,6 +33,7 @@
         <resilience4j.version>2.2.0</resilience4j.version>
         <httpclient-legacy.version>4.5.14</httpclient-legacy.version>
         <jaxws-rt.version>4.0.3</jaxws-rt.version>
+        <logstack-logback.version>7.4</logstack-logback.version>
 
         <!-- Plugins -->
         <maven-compiler-plugin.version>3.13.0</maven-compiler-plugin.version>
@@ -186,6 +187,15 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
+        </dependency>
+
+        <!-- ======================================================= -->
+        <!-- LogBack                                                -->
+        <!-- ======================================================= -->
+        <dependency>
+            <groupId>net.logstash.logback</groupId>
+            <artifactId>logstash-logback-encoder</artifactId>
+            <version>${logstack-logback.version}</version>
         </dependency>
     </dependencies>
 

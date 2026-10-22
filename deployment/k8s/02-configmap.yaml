@@ -23,3 +23,11 @@ data:
 
   # Actuator
   MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: "health,info,gateway"
+
+  #PORTS
+  CRUD_SERVICE_PORT: "8087"
+  EUREKA_SERVICE_PORT: "8761"
+  GATEWAY_SERVICE_PORT: "8086"
+
+  #WSDL
+  WSDL_URL: "http://webservices.oorsprong.org/websamples.countryinfo/CountryInfoService.wso"

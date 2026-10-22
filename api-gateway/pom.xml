@@ -33,6 +33,7 @@
         <!-- Spring Boot 4.1.1 already ships patched Netty, HttpCore5/HttpClient5, Jackson and Log4j. -->
         <!-- CVE-2026-8763 (CRITICAL), CVE-2026-13506 — Bouncy Castle is not managed by Spring Boot, pinned below -->
         <bouncycastle.version>1.85</bouncycastle.version>
+        <logstack-logback.version>7.4</logstack-logback.version>
     </properties>
 
     <dependencies>
@@ -102,7 +103,17 @@
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
+
+        <!-- ======================================================= -->
+        <!-- LogBack                                                -->
+        <!-- ======================================================= -->
+        <dependency>
+            <groupId>net.logstash.logback</groupId>
+            <artifactId>logstash-logback-encoder</artifactId>
+            <version>${logstack-logback.version}</version>
+        </dependency>
     </dependencies>
+
     <dependencyManagement>
         <dependencies>
             <!-- CVE-2026-68497 (HIGH): Jackson CPU DoS via unbounded numeric parsing.

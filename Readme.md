@@ -340,7 +340,7 @@ From the project root:
 cd deployment
 
 # Make the deploy script executable
-chmod +x k8s/deploy.sh
+chmod +x deploy.sh
 
 # Run it — creates the Kind cluster, builds & loads images, applies manifests
 ./k8s/deploy.sh
@@ -356,8 +356,21 @@ kubectl port-forward svc/eureka-server 8761:8761 -n microservices
 
 # Check Logs
 kubectl logs -f deployment/crud-service -n microservices
+```
 
+- if using windows plus Git Bash
+```
+# change directory into deployment folder
+cd deployment
 
+# Make the deploy script executable
+$ chmod +x deploy.sh
+
+# converting file deploy.sh to Unix format...
+$ dos2unix deploy.sh
+
+# Execute the file
+$ ./deploy.sh
 ```
 
 ---

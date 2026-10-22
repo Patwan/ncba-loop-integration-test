@@ -13,6 +13,4 @@ RUN mvn dependency:go-offline -B || true
 # Copy source code
 COPY src ./src
 
-EXPOSE 8086
-
 CMD ["mvn", "spring-boot:run", "-Dspring-boot.run.profiles=dev"]

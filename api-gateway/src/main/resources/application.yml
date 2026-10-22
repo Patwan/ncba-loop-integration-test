@@ -1,5 +1,5 @@
 server:
-  port: 8086
+  port: ${GATEWAY_SERVICE_PORT:8086}
 
 spring:
   application:
@@ -13,16 +13,16 @@ spring:
 
   cloud:
     gateway:
-      httpclient:                       # top-level under gateway
-        connect-timeout: 3000
-        response-timeout: 120s
-      routes:
-        - id: crud-service
-          uri: lb://crud-service
-          predicates:
-            - Path=/api/v1/**
-          filters:
-            - StripPrefix=1
+      server:
+        webflux:
+          httpclient:
+            connect-timeout: 3000
+            response-timeout: 120s
+          routes:
+            - id: crud-service
+              uri: lb://crud-service
+              predicates:
+                - Path=/api/v1/**
 
 management:
   endpoints:
@@ -31,6 +31,7 @@ management:
         include: health,info,gateway
   endpoint:
     gateway:
+      enabled: true
       access: unrestricted
 
 springdoc:
@@ -38,9 +39,10 @@ springdoc:
     urls:
       - name: Crud Service
         url: /crud-service/v3/api-docs
+
 eureka:
   client:
     service-url:
-      defaultZone: ${EUREKA_SERVER:http://eureka-server:8761/eureka/}
+      defaultZone: ${EUREKA_SERVER:http://localhost:8761/eureka/}
     register-with-eureka: true
     fetch-registry: true

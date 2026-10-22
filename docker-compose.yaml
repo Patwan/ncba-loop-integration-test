@@ -6,13 +6,13 @@ services:
     container_name: eureka-server
     restart: unless-stopped
     ports:
-      - "${EUREKA_SERVICE_PORT:-8761}:8761"
+      - "${EUREKA_SERVICE_PORT}:${EUREKA_SERVICE_PORT}"
     networks:
       - backend-network
     env_file:
       - .env.dev
     healthcheck:
-      test: [ "CMD", "curl", "-fsS", "http://localhost:8761/actuator/health" ]
+      test: [ "CMD", "curl", "-fsS", "http://localhost:${EUREKA_SERVICE_PORT}/actuator/health" ]
       interval: 5s
       timeout: 3s
       retries: 20
@@ -47,7 +47,7 @@ services:
     container_name: cloudbeaver
     restart: unless-stopped
     ports:
-      - "5050:8978"
+      - "${CDBEAVER_PORT}:8978"
     networks:
       - backend-network
     volumes:
@@ -93,7 +93,7 @@ services:
     container_name: api-gateway
     restart: unless-stopped
     ports:
-      - "${GATEWAY_SERVICE_PORT:-8086}:8086"
+      - "${GATEWAY_SERVICE_PORT}:${GATEWAY_SERVICE_PORT}"
     env_file:
       - .env.dev
     depends_on:

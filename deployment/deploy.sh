@@ -4,6 +4,9 @@ set -euo pipefail
 CLUSTER=microservices-cluster
 NS=microservices
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+
 echo "=== 1. Create Kind cluster (if missing) ==="
 if ! kind get clusters | grep -q "^${CLUSTER}$"; then
   kind create cluster --name "${CLUSTER}"
@@ -11,10 +14,23 @@ else
   echo "Cluster '${CLUSTER}' already exists."
 fi
 
-echo "=== 2. Build Docker images ==="
-docker build -t ncba-loop-test-eureka-server:latest ./eureka-server
-docker build -t ncba-loop-test-crud-service:latest  ./crud-service
-docker build -t ncba-loop-test-api-gateway:latest   ./api-gateway
+
+echo "=== 2. Build Docker images (skip if exists) ==="
+build_if_missing() {
+  local IMAGE_NAME="$1"
+  local CONTEXT_PATH="$2"
+
+  if docker image inspect "$IMAGE_NAME" >/dev/null 2>&1; then
+    echo "Image '$IMAGE_NAME' already exists locally, skipping build."
+  else
+    echo "Building '$IMAGE_NAME'..."
+    docker build -t "$IMAGE_NAME" "$CONTEXT_PATH"
+  fi
+}
+
+build_if_missing "ncba-loop-test-eureka-server:latest" "$ROOT_DIR/eureka-server"
+build_if_missing "ncba-loop-test-crud-service:latest"  "$ROOT_DIR/crud-service"
+build_if_missing "ncba-loop-test-api-gateway:latest"   "$ROOT_DIR/api-gateway"
 
 echo "=== 3. Load images into Kind ==="
 kind load docker-image ncba-loop-test-eureka-server:latest --name "${CLUSTER}"
